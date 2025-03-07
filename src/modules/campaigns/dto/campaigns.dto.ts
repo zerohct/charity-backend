@@ -44,3 +44,17 @@ export class CreateCampaignDto {
 
   // Thêm các trường startDate, deadline, location,... nếu cần
 }
+export class UpdateCampaignDto {
+  @IsOptional()
+  @IsString()
+  title?: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsOptional()
+  @IsNumber()
+  targetAmount?: number;
+}
+
