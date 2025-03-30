@@ -6,7 +6,9 @@ import {
   IsOptional,
   IsArray,
   IsBoolean,
+  IsDateString,
 } from 'class-validator';
+import { Type } from 'class-transformer'; // 
 
 // DTO để tạo một chiến dịch mới
 export class CreateCampaignDto {
@@ -25,12 +27,18 @@ export class CreateCampaignDto {
   @IsString()
   category?: string;
 
+  @IsOptional()
+  @IsString()
+  location?: string;
+
   // Tags dưới dạng mảng chuỗi (sẽ được lưu dưới dạng JSON)
   @IsOptional()
   @IsArray()
+  @IsString({ each: true }) // Validate từng phần tử
   tags?: string[];
 
   @IsNumber()
+  @Type(() => Number)//CẦN CÓ ĐỂ ÉP KIỂU
   targetAmount: number;
 
   // Các trường khác tùy chọn
@@ -40,9 +48,18 @@ export class CreateCampaignDto {
 
   @IsOptional()
   @IsBoolean()
+  @Type(() => Boolean) //CẦN CÓ ĐỂ ÉP KIỂU "true" thành true
   isFeatured?: boolean;
 
   // Thêm các trường startDate, deadline, location,... nếu cần
+  // Thêm startDate và deadline dưới dạng chuỗi ISO date
+  @IsOptional()
+  @IsDateString()
+  startDate?: string;
+
+  @IsOptional()
+  @IsDateString()
+  deadline?: string;
 }
 export class UpdateCampaignDto {
   @IsOptional()
