@@ -24,9 +24,9 @@ export class Comment {
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @ManyToOne(() => Campaign, (campaign) => campaign.comments)
+  @ManyToOne(() => Campaign, (campaign) => campaign.comments, { eager: true })
   campaign: Campaign;
 
-  @ManyToOne(() => User, (user) => user.comments)
-  user: User;
+  @ManyToOne(() => User, (user) => user.comments, { eager: true })
+  user: User; 
 }

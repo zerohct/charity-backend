@@ -36,6 +36,12 @@ export class CampaignMedia {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
-  @ManyToOne(() => Campaign, (campaign) => campaign.media)
+  // @ManyToOne(() => Campaign, (campaign) => campaign.media)
+  // campaign: Campaign;
+
+  @Column({ type: 'text', nullable: true }) // Base64 image
+  base64Image?: string;
+
+  @ManyToOne(() => Campaign, (campaign) => campaign.media, { onDelete: 'CASCADE' })
   campaign: Campaign;
 }
