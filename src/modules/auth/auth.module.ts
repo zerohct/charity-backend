@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
@@ -8,13 +7,20 @@ import { AuthController } from './auth.controller';
 import { UsersModule } from '../users/users.module';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { MailModule } from '../mail/mail.module';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
   imports: [
     UsersModule,
     PassportModule,
     MailModule,
-    // Đăng ký JwtModule bất đồng bộ, lấy secret từ biến môi trường
+    ThrottlerModule.forRoot([
+      {
+        name: 'default',
+        ttl: 60,
+        limit: 5,
+      },
+    ]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

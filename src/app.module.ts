@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { Module } from '@nestjs/common';
+import { Module, OnApplicationBootstrap } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
@@ -13,6 +13,8 @@ import { AuthModule } from './modules/auth/auth.module';
 import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from './modules/users/guards/roles.guard';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
+import { DataSource } from 'typeorm';
+import AdminUserSeeder from './database/seeds/admin-user.seed';
 
 @Module({
   imports: [
@@ -52,4 +54,11 @@ import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements OnApplicationBootstrap {
+  constructor(private readonly dataSource: DataSource) {}
+
+  async onApplicationBootstrap() {
+    const seeder = new AdminUserSeeder();
+    await seeder.run(this.dataSource);
+  }
+}
