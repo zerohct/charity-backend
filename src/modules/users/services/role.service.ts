@@ -13,12 +13,10 @@ export class RolesService {
     private readonly usersRepository: Repository<User>,
   ) {}
 
-  // Get all roles
   async findAll(): Promise<Role[]> {
     return this.rolesRepository.find();
   }
 
-  // Find role by name
   async findByName(name: string): Promise<Role> {
     const role = await this.rolesRepository.findOne({ where: { name } });
     if (!role) {
@@ -27,7 +25,6 @@ export class RolesService {
     return role;
   }
 
-  // Find role by ID
   async findById(id: number): Promise<Role> {
     const role = await this.rolesRepository.findOne({ where: { id } });
     if (!role) {
@@ -36,13 +33,28 @@ export class RolesService {
     return role;
   }
 
-  // Create a new role
   async create(name: string, description?: string): Promise<Role> {
+    const existingRole = await this.rolesRepository.findOne({
+      where: { name },
+    });
+    if (existingRole) {
+      throw new NotFoundException(`Role "${name}" already exists`);
+    }
     const role = this.rolesRepository.create({ name, description });
     return this.rolesRepository.save(role);
   }
 
-  // Initialize default roles
+  async update(id: number, name: string, description?: string): Promise<Role> {
+    const role = await this.findById(id);
+    role.name = name;
+    if (description) role.description = description;
+    return this.rolesRepository.save(role);
+  }
+
+  async delete(id: number): Promise<void> {
+    await this.rolesRepository.delete(id);
+  }
+
   async initializeDefaultRoles(): Promise<void> {
     const count = await this.rolesRepository.count();
     if (count > 0) {
@@ -62,7 +74,6 @@ export class RolesService {
     }
   }
 
-  // Assign role to user
   async assignRoleToUser(userId: number, roleName: string): Promise<User> {
     const user = await this.usersRepository.findOne({
       where: { id: userId },
@@ -73,18 +84,14 @@ export class RolesService {
     }
 
     const role = await this.findByName(roleName);
-
-    // Check if user already has this role
     const hasRole = user.roles.some((r) => r.id === role.id);
     if (!hasRole) {
       user.roles.push(role);
       return this.usersRepository.save(user);
     }
-
     return user;
   }
 
-  // Remove role from user
   async removeRoleFromUser(userId: number, roleName: string): Promise<User> {
     const user = await this.usersRepository.findOne({
       where: { id: userId },
@@ -95,12 +102,10 @@ export class RolesService {
     }
 
     const role = await this.findByName(roleName);
-
     user.roles = user.roles.filter((r) => r.id !== role.id);
     return this.usersRepository.save(user);
   }
 
-  // Set roles for user (replacing all existing roles)
   async setUserRoles(userId: number, roleNames: string[]): Promise<User> {
     const user = await this.usersRepository.findOne({
       where: { id: userId },
@@ -113,12 +118,10 @@ export class RolesService {
     const roles = await Promise.all(
       roleNames.map((name) => this.findByName(name)),
     );
-
     user.roles = roles;
     return this.usersRepository.save(user);
   }
 
-  // Check if user has a specific role
   async userHasRole(userId: number, roleName: string): Promise<boolean> {
     const user = await this.usersRepository.findOne({
       where: { id: userId },

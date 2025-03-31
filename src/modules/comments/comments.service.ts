@@ -5,7 +5,7 @@ import { Comment } from './entities/comment.entity';
 import { CreateCommentDto } from './dto/comments.dto';
 import { Campaign } from '../campaigns/entities/campaign.entity';
 import { User } from '../users/entities/user.entity';
-import { NotFoundException } from '@nestjs/common'; 
+import { NotFoundException } from '@nestjs/common';
 
 @Injectable()
 export class CommentsService {
@@ -15,7 +15,7 @@ export class CommentsService {
 
     @InjectRepository(Campaign)
     private campaignsRepository: Repository<Campaign>,
-    
+
     @InjectRepository(User)
     private usersRepository: Repository<User>,
   ) {}
@@ -35,7 +35,9 @@ export class CommentsService {
   async create(createCommentDto: CreateCommentDto): Promise<Comment> {
     const { content, rating, campaignId, userId } = createCommentDto;
 
-    const campaign = await this.campaignsRepository.findOne({ where: { id: campaignId } });
+    const campaign = await this.campaignsRepository.findOne({
+      where: { id: campaignId },
+    });
     if (!campaign) throw new NotFoundException('Campaign not found');
 
     const user = await this.usersRepository.findOne({ where: { id: userId } });

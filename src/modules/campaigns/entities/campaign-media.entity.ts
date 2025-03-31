@@ -42,6 +42,8 @@ export class CampaignMedia {
   @Column({ type: 'text', nullable: true }) // Base64 image
   base64Image?: string;
 
-  @ManyToOne(() => Campaign, (campaign) => campaign.media, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Campaign, (campaign) => campaign.media, {
+    onDelete: 'CASCADE',
+  })
   campaign: Campaign;
 }

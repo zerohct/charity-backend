@@ -68,20 +68,12 @@ export class AuthController {
       { name: 'lastName', maxCount: 1 },
     ]),
   )
+  @Post('register')
   async register(
-    @UploadedFiles() files,
-    @Body() body,
+    @Body() registerDto: RegisterDto,
   ): Promise<ICustomResponse<any>> {
     try {
-      const registerDto: RegisterDto = {
-        email: body.email,
-        password: body.password,
-        firstName: body.firstName,
-        lastName: body.lastName,
-      };
-
       const result = await this.authService.register(registerDto);
-
       return ResponseApi.success(
         'Register successful',
         result,

@@ -8,7 +8,7 @@ import {
   IsBoolean,
   IsDateString,
 } from 'class-validator';
-import { Type } from 'class-transformer'; // 
+import { Type } from 'class-transformer'; //
 
 // DTO để tạo một chiến dịch mới
 export class CreateCampaignDto {
@@ -38,7 +38,7 @@ export class CreateCampaignDto {
   tags?: string[];
 
   @IsNumber()
-  @Type(() => Number)//CẦN CÓ ĐỂ ÉP KIỂU
+  @Type(() => Number) //CẦN CÓ ĐỂ ÉP KIỂU
   targetAmount: number;
 
   // Các trường khác tùy chọn
@@ -74,4 +74,3 @@ export class UpdateCampaignDto {
   @IsNumber()
   targetAmount?: number;
 }
-

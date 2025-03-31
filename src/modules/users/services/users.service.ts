@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import {
   Injectable,
   NotFoundException,
@@ -22,24 +21,40 @@ export class UsersService {
   }
 
   // Tìm người dùng theo email
+  // Tìm người dùng theo email (for registration checks)
   async findByEmail(email: string): Promise<User | null> {
-    return this.usersRepository.findOne({ where: { email } });
+    const user = await this.usersRepository.findOne({
+      where: { email },
+      relations: ['roles'],
+    });
+    return user || null; // Trả về null nếu không tìm thấy
   }
 
   // Tìm người dùng theo số điện thoại
   async findByPhone(phone: string): Promise<User | null> {
-    return this.usersRepository.findOne({ where: { phone } });
+    const user = await this.usersRepository.findOne({
+      where: { phone },
+      relations: ['roles'],
+    });
+    return user || null;
   }
 
+  async findByVerificationToken(token: string): Promise<User | null> {
+    const user = await this.usersRepository.findOne({
+      where: { verificationToken: token },
+      relations: ['roles'],
+    });
+    return user || null;
+  }
   // Tìm người dùng theo ID
-  async findById(id: number): Promise<User> {
+  async findById(id: number, relations: string[] = []): Promise<User> {
     const user = await this.usersRepository.findOne({
       where: { id },
-      relations: ['roles'],
+      relations: relations,
     });
 
     if (!user) {
-      throw new NotFoundException(`Không tìm thấy người dùng với ID "${id}"`);
+      throw new NotFoundException(`User with ID ${id} not found`);
     }
 
     return user;
@@ -47,36 +62,34 @@ export class UsersService {
 
   // Tạo người dùng mới
   async create(createUserDto: CreateUserDto): Promise<User> {
-    const existingUser = await this.findByEmail(createUserDto.email);
-    if (existingUser) {
-      throw new UnauthorizedException('Email đã được sử dụng');
-    }
+    try {
+      // Kiểm tra email trùng lặp
+      const existingUser = await this.usersRepository.findOne({
+        where: { email: createUserDto.email },
+      });
+      if (existingUser) {
+        throw new UnauthorizedException('Email đã được sử dụng');
+      }
 
-    const newUser = this.usersRepository.create(createUserDto);
-    return this.usersRepository.save(newUser);
+      const newUser = this.usersRepository.create(createUserDto);
+      return await this.usersRepository.save(newUser);
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new Error(`Không thể tạo người dùng: ${error.message}`);
+    }
   }
 
-  async findByVerificationToken(token: string): Promise<User> {
-    const user = await this.usersRepository.findOne({
-      where: { verificationToken: token },
-    });
-
-    if (!user) {
-      throw new NotFoundException(
-        `Không tìm thấy người dùng với token "${token}"`,
-      );
-    }
-
-    return user;
-  }
-
+  // Cập nhật người dùng
   async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
     const user = await this.findById(id);
     Object.assign(user, updateUserDto);
     return this.usersRepository.save(user);
   }
 
-  async remove(id: number): Promise<void> {
+  // Xóa người dùng
+  async delete(id: number): Promise<void> {
     await this.usersRepository.delete(id);
   }
 }

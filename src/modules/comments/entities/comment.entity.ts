@@ -28,5 +28,5 @@ export class Comment {
   campaign: Campaign;
 
   @ManyToOne(() => User, (user) => user.comments, { eager: true })
-  user: User; 
+  user: User;
 }

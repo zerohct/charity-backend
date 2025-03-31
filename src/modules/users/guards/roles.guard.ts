@@ -1,50 +1,40 @@
-import {
-  Injectable,
-  CanActivate,
-  ExecutionContext,
-  ForbiddenException,
-} from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { RolesService } from '../services/role.service';
+import { User } from '../entities/user.entity';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
-  constructor(
-    private readonly reflector: Reflector,
-    private readonly rolesService: RolesService,
-  ) {}
+  constructor(private reflector: Reflector) {}
 
-  async canActivate(context: ExecutionContext): Promise<boolean> {
+  canActivate(context: ExecutionContext): boolean {
+    // Lấy các roles được yêu cầu từ metadata
     const requiredRoles = this.reflector.get<string[]>(
       'roles',
       context.getHandler(),
     );
 
+    // Nếu không có yêu cầu roles, cho phép truy cập
     if (!requiredRoles || requiredRoles.length === 0) {
       return true;
     }
 
+    // Lấy user từ request
     const request = context.switchToHttp().getRequest();
-    const user = request.user;
+    const user = request.user as User;
 
-    // Nếu không có user và không yêu cầu 'guest', cấm
-    if (!user && !requiredRoles.includes('guest')) {
-      throw new ForbiddenException('Authentication required');
+    // Kiểm tra user có tồn tại không
+    if (!user) {
+      return false;
     }
 
-    // Nếu không có user nhưng cho phép 'guest' => return true
-    if (!user && requiredRoles.includes('guest')) {
-      return true;
+    // Kiểm tra user có roles không
+    if (!user.roles || !Array.isArray(user.roles)) {
+      return false;
     }
 
-    // Kiểm tra user có ít nhất 1 trong các roles yêu cầu không
-    for (const role of requiredRoles) {
-      const hasRole = await this.rolesService.userHasRole(user.id, role);
-      if (hasRole) {
-        return true;
-      }
-    }
-
-    throw new ForbiddenException('Insufficient permissions');
+    // Kiểm tra xem user có quyền yêu cầu không
+    return requiredRoles.some((role) =>
+      user.roles.some((userRole) => userRole.name === role),
+    );
   }
 }

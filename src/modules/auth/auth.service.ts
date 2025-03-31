@@ -25,13 +25,11 @@ export class AuthService {
   // Hàm login
   async login(loginDto: LoginDto): Promise<AuthResponse> {
     try {
-      // Tìm user theo email
       const user = await this.usersService.findByEmail(loginDto.email);
       if (!user) {
         throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
       }
 
-      // Kiểm tra mật khẩu
       const isPasswordValid = await bcrypt.compare(
         loginDto.password,
         user.password,
@@ -40,19 +38,19 @@ export class AuthService {
         throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
       }
 
-      // Kiểm tra xác thực email
       if (!user.emailVerified) {
         throw new UnauthorizedException(
           'Email chưa được xác thực. Vui lòng kiểm tra hộp thư của bạn.',
         );
       }
+      const userWithRoles = await this.usersService.findById(user.id, [
+        'roles',
+      ]);
 
-      // Tạo token
-      const payload = { sub: user.id, email: user.email };
+      const payload = { sub: userWithRoles.id, email: userWithRoles.email };
       const accessToken = await this.jwtService.signAsync(payload);
 
-      // Bỏ password khi trả về
-      const { password, ...result } = user;
+      const { password, ...result } = userWithRoles;
       return {
         user: result,
         accessToken,
@@ -68,7 +66,7 @@ export class AuthService {
   // Hàm register
   async register(registerDto: RegisterDto): Promise<AuthResponse> {
     try {
-      // Check if email already exists
+      console.log('Registering user with email:', registerDto.email);
       const existingUser = await this.usersService.findByEmail(
         registerDto.email,
       );
@@ -76,32 +74,26 @@ export class AuthService {
         throw new UnauthorizedException('Email đã được sử dụng');
       }
 
-      // Hash password
       const hashedPassword = await bcrypt.hash(registerDto.password, 10);
-
-      // Create new user with unverified email status
       const newUserData = {
         ...registerDto,
         password: hashedPassword,
-        emailVerified: false,
+        emailVerified: true, // Tạm thời đặt true để bỏ qua gửi email
         verificationToken: this.generateVerificationToken(),
       };
       const newUser = await this.usersService.create(newUserData);
 
-      // Assign the default 'user' role to self-registered users
       await this.rolesService.assignRoleToUser(newUser.id, 'user');
 
-      // Send verification email
-      await this.mailService.sendVerificationEmail(
-        newUser.email,
-        newUser.verificationToken,
-      );
+      // Tạm thời comment để kiểm tra
+      // await this.mailService.sendVerificationEmail(
+      //   newUser.email,
+      //   newUser.verificationToken,
+      // );
 
-      // Create token
       const payload = { sub: newUser.id, email: newUser.email };
       const accessToken = await this.jwtService.signAsync(payload);
 
-      // Remove password from response
       const { password, ...result } = newUser;
       return {
         user: result,
@@ -112,11 +104,9 @@ export class AuthService {
       if (error instanceof UnauthorizedException) {
         throw error;
       }
-
       if (error instanceof Error) {
         throw new UnauthorizedException('Đăng ký thất bại: ' + error.message);
       }
-
       throw new UnauthorizedException('Đăng ký thất bại: ' + String(error));
     }
   }
