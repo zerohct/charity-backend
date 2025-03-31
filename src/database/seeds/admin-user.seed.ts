@@ -3,6 +3,10 @@ import { Seeder } from 'typeorm-extension';
 import { User } from '../../modules/users/entities/user.entity';
 import { Role } from '../../modules/users/entities/role.entity';
 import * as bcrypt from 'bcrypt';
+import * as dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
 
 export default class AdminUserSeeder implements Seeder {
   async run(dataSource: DataSource): Promise<void> {
@@ -10,9 +14,22 @@ export default class AdminUserSeeder implements Seeder {
     const userRepository = dataSource.getRepository(User);
     const roleRepository = dataSource.getRepository(Role);
 
+    // Get admin email and password from environment variables
+    const adminEmail = process.env.ADMIN_EMAIL;
+    const adminPassword = process.env.ADMIN_PASSWORD;
+
+    if (!adminEmail || !adminPassword) {
+      console.error(
+        'ADMIN_EMAIL or ADMIN_PASSWORD is not defined in the environment variables.',
+      );
+      throw new Error(
+        'Missing required environment variables: ADMIN_EMAIL or ADMIN_PASSWORD',
+      );
+    }
+
     // Check if admin user already exists
     const existingAdmin = await userRepository.findOne({
-      where: { email: 'admin@example.com' },
+      where: { email: adminEmail },
     });
 
     if (existingAdmin) {
@@ -34,14 +51,13 @@ export default class AdminUserSeeder implements Seeder {
     }
 
     // Create admin user
-    const hashedPassword = await bcrypt.hash('admin123', 10);
+    const hashedPassword = await bcrypt.hash(adminPassword, 10);
 
     const adminUser = userRepository.create({
       firstName: 'System',
       lastName: 'Administrator',
-      email: 'admin@example.com',
+      email: adminEmail,
       password: hashedPassword,
-      phone: '0123456789',
       emailVerified: true,
       roles: [adminRole],
     });
