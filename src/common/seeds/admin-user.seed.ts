@@ -50,8 +50,8 @@ export default class AdminUserSeeder implements Seeder {
       adminRole = await roleRepository.save(adminRole);
     }
 
-    // Create admin user
-    const hashedPassword = await bcrypt.hash(adminPassword, 10);
+    // Create admin user with the same hashing method as register
+    const hashedPassword = await bcrypt.hash(adminPassword, 10); // Using salt rounds 10, same as in AuthService
 
     const adminUser = userRepository.create({
       firstName: 'System',

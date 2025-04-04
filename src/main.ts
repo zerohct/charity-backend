@@ -13,23 +13,19 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true,
   });
-
-  // Enable Helmet
   app.use(helmet());
-
-  // Enable global rate limiting
   app.use(
     rateLimit({
-      windowMs: 15 * 60 * 1000, // 15 minutes
-      max: 100, // limit each IP to 100 requests per windowMs
+      windowMs: 15 * 60 * 1000,
+      max: 100,
     }),
   );
 
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true, // Loại bỏ các field không có trong DTO
-      forbidNonWhitelisted: true, // Báo lỗi nếu có field thừa
-      transform: true, // Chuyển form-data string => number
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
     }),
   );
 

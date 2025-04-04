@@ -14,7 +14,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from './modules/users/guards/roles.guard';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { DataSource } from 'typeorm';
-import AdminUserSeeder from './database/seeds/admin-user.seed';
+import AdminUserSeeder from './common/seeds/admin-user.seed';
 
 @Module({
   imports: [

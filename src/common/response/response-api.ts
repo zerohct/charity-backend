@@ -1,5 +1,3 @@
-// src/common/response/response-api.ts
-
 import { HttpStatus } from '@nestjs/common';
 import { ValidationError } from 'class-validator'; // Nếu bạn dùng class-validator
 
@@ -11,17 +9,11 @@ export interface ICustomResponse<T> {
 }
 
 export class ResponseApi {
-  /**
-   * Ví dụ hàm để format các lỗi nếu bạn xài class-validator.
-   * Nếu bạn không xài class-validator hoặc muốn code đơn giản hơn,
-   * có thể tuỳ chỉnh lại logic này.
-   */
   static getFormattedErrors(errors: ValidationError[]): string {
     if (!errors || errors.length === 0) return '';
     const messages: string[] = [];
 
     errors.forEach((err) => {
-      // Mỗi err.constraints là 1 object chứa ruleName: 'nội dung lỗi'
       if (err.constraints) {
         messages.push(...Object.values(err.constraints));
       }
