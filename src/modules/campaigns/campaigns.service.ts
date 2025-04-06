@@ -7,7 +7,7 @@ import { CreateCampaignDto } from './dto/campaigns.dto';
 import { UpdateCampaignDto } from './dto/campaigns.dto';
 import { NotFoundException } from '@nestjs/common';
 import { CampaignMedia } from './entities/campaign-media.entity';
-import { ILike } from 'typeorm';
+
 import { BadRequestException } from '@nestjs/common';
 import { DeepPartial } from 'typeorm';
 import { Logger } from '@nestjs/common';
@@ -51,24 +51,20 @@ export class CampaignsService {
 
     const targetAmount = Number(body.targetAmount);
 
-    // Xử lý tags - đảm bảo luôn là array
     let tagsArray: string[] = [];
     if (body.tags) {
       try {
         if (typeof body.tags === 'string') {
-          // Kiểm tra nếu là chuỗi JSON array
           if (body.tags.startsWith('[') && body.tags.endsWith(']')) {
             tagsArray = JSON.parse(body.tags).map((tag: string) =>
               tag.trim().replace(/^["']+|["']+$/g, ''),
             );
           } else {
-            // Xử lý chuỗi comma-separated
             tagsArray = body.tags
               .split(',')
               .map((tag) => tag.trim().replace(/^["']+|["']+$/g, ''));
           }
         } else if (Array.isArray(body.tags)) {
-          // Nếu là mảng, làm sạch từng phần tử
           tagsArray = body.tags.map((tag) =>
             typeof tag === 'string'
               ? tag.trim().replace(/^["']+|["']+$/g, '')
@@ -82,14 +78,13 @@ export class CampaignsService {
         throw new BadRequestException('Invalid tags format');
       }
     }
-    // Tạo campaign mới với các field bổ sung
     const newCampaign = this.campaignsRepository.create({
       title: body.title,
       description: body.description || null,
       emoji: body.emoji || null,
       category: body.category || null,
       location: body.location || null,
-      tags: tagsArray, // Sử dụng tagsArray đã được xử lý
+      tags: tagsArray,
       targetAmount: targetAmount,
       collectedAmount: 0,
       donationCount: 0,
@@ -150,16 +145,13 @@ export class CampaignsService {
       throw new BadRequestException('Update data is required');
     }
 
-    // Kiểm tra campaign tồn tại
     const existing = await this.campaignsRepository.findOne({ where: { id } });
     if (!existing) {
       throw new NotFoundException(`Campaign with ID ${id} not found`);
     }
 
-    // Cập nhật
     await this.campaignsRepository.update(id, updateDto);
 
-    // Truy vấn lại bản đã cập nhật kèm media
     const updated = await this.campaignsRepository.findOne({
       where: { id },
       relations: ['media'],
@@ -184,8 +176,6 @@ export class CampaignsService {
     await this.campaignsRepository.delete(id);
   }
 
-  //BUG
-  // Tìm kiếm chiến dịch theo tiêu đề
   async search(
     query: string,
     page = 1,
@@ -196,17 +186,24 @@ export class CampaignsService {
     }
 
     try {
-      const [data, total] = await this.campaignsRepository.findAndCount({
-        where: { title: ILike(`%${query}%`) },
-        skip: (page - 1) * size,
-        take: size,
-        order: { createdAt: 'DESC' },
-      });
+      const queryBuilder = this.campaignsRepository
+        .createQueryBuilder('campaign')
+        .leftJoinAndSelect('campaign.media', 'media') // Load relation media
+        .where('LOWER(campaign.title) LIKE LOWER(:query)', {
+          query: `%${query}%`,
+        })
+        .skip((page - 1) * size)
+        .take(size)
+        .orderBy('campaign.createdAt', 'DESC');
 
-      return { data, total, page, size }; // Thêm page và size vào response
+      const [data, total] = await queryBuilder.getManyAndCount();
+
+      return { data, total, page, size };
     } catch (err) {
       logger.error('Search error:', err);
-      throw new InternalServerErrorException('Không thể tìm kiếm chiến dịch');
+      throw new InternalServerErrorException(
+        `Không thể tìm kiếm chiến dịch: ${err.message}`,
+      );
     }
   }
 
