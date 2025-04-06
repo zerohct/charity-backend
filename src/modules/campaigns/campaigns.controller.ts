@@ -173,25 +173,22 @@ export class CampaignsController {
     const currentPage = parseInt(page || '1', 10);
     const pageSize = parseInt(size || '10', 10);
 
-    console.log('Search campaigns:', { query, currentPage, pageSize });
-
     try {
-      const { data, total } = await this.campaignsService.search(
+      const { data, total, page, size } = await this.campaignsService.search(
         query,
         currentPage,
         pageSize,
       );
       return ResponseApi.success('Tìm kiếm thành công', {
         total,
-        page: currentPage,
-        size: pageSize,
+        page,
+        size,
         data,
       });
     } catch (err) {
-      console.error('Lỗi ở controller:', err);
       return ResponseApi.error(
-        'Đã có lỗi xảy ra',
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        err.message,
+        err.status || HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }

@@ -36,8 +36,6 @@ export class CampaignsService {
     body: CreateCampaignDto,
     file?: Express.Multer.File,
   ): Promise<Campaign> {
-    console.log('Received body:', body);
-
     if (!body.title) {
       throw new BadRequestException('Title is required');
     }
@@ -51,9 +49,39 @@ export class CampaignsService {
       base64Image = `data:${file.mimetype};base64,${fileBuffer}`;
     }
 
-    // Ép kiểu số cho targetAmount đã được xử lý bởi @Type trong DTO nhưng vẫn an toàn
     const targetAmount = Number(body.targetAmount);
 
+    // Xử lý tags - đảm bảo luôn là array
+    let tagsArray: string[] = [];
+    if (body.tags) {
+      try {
+        if (typeof body.tags === 'string') {
+          // Kiểm tra nếu là chuỗi JSON array
+          if (body.tags.startsWith('[') && body.tags.endsWith(']')) {
+            tagsArray = JSON.parse(body.tags).map((tag: string) =>
+              tag.trim().replace(/^["']+|["']+$/g, ''),
+            );
+          } else {
+            // Xử lý chuỗi comma-separated
+            tagsArray = body.tags
+              .split(',')
+              .map((tag) => tag.trim().replace(/^["']+|["']+$/g, ''));
+          }
+        } else if (Array.isArray(body.tags)) {
+          // Nếu là mảng, làm sạch từng phần tử
+          tagsArray = body.tags.map((tag) =>
+            typeof tag === 'string'
+              ? tag.trim().replace(/^["']+|["']+$/g, '')
+              : String(tag),
+          );
+        } else {
+          throw new BadRequestException('tags must be an array');
+        }
+      } catch (err) {
+        console.error('Error parsing tags:', err);
+        throw new BadRequestException('Invalid tags format');
+      }
+    }
     // Tạo campaign mới với các field bổ sung
     const newCampaign = this.campaignsRepository.create({
       title: body.title,
@@ -61,16 +89,12 @@ export class CampaignsService {
       emoji: body.emoji || null,
       category: body.category || null,
       location: body.location || null,
-      tags:
-        body.tags && typeof body.tags === 'string'
-          ? JSON.parse(body.tags)
-          : body.tags || [],
+      tags: tagsArray, // Sử dụng tagsArray đã được xử lý
       targetAmount: targetAmount,
       collectedAmount: 0,
       donationCount: 0,
       status: 'pending',
       slug: body.slug || null,
-      // Nếu isFeatured được gửi lên là chuỗi thì chuyển thành boolean (DTO đã ép kiểu, nhưng dự phòng)
       isFeatured:
         typeof body.isFeatured === 'string'
           ? body.isFeatured === 'true'
@@ -166,7 +190,7 @@ export class CampaignsService {
     query: string,
     page = 1,
     size = 10,
-  ): Promise<{ data: Campaign[]; total: number }> {
+  ): Promise<{ data: Campaign[]; total: number; page: number; size: number }> {
     if (!query) {
       throw new BadRequestException('Query string cannot be empty');
     }
@@ -179,9 +203,9 @@ export class CampaignsService {
         order: { createdAt: 'DESC' },
       });
 
-      return { data, total };
+      return { data, total, page, size }; // Thêm page và size vào response
     } catch (err) {
-      console.error('Lỗi khi tìm kiếm campaign:', err);
+      logger.error('Search error:', err);
       throw new InternalServerErrorException('Không thể tìm kiếm chiến dịch');
     }
   }

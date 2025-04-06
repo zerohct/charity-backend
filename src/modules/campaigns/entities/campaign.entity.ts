@@ -34,7 +34,7 @@ export class Campaign {
 
   // Lưu danh sách tag dưới dạng JSON (array of strings)
   @Column('simple-json', { nullable: true })
-  tags: string[];
+  tags?: string | string[];
 
   @Column({ type: 'decimal', precision: 15, scale: 2 })
   targetAmount: number;
