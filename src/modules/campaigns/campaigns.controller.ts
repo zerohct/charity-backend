@@ -138,9 +138,11 @@ export class CampaignsController {
   }
   // PUT /campaigns/:id: Cập nhật thông tin một chiến dịch theo ID
   @Put(':id')
+  @UseInterceptors(FileInterceptor('image')) // 'image' là key form-data gửi lên
   async updateCampaign(
     @Param('id') id: string,
-    @Body() updateCampaignDto: UpdateCampaignDto,
+    @UploadedFile() file: Express.Multer.File, // nhận file
+    @Body() updateCampaignDto: UpdateCampaignDto, // nhận các trường khác
   ) {
     const campaignId = parseInt(id, 10);
     if (isNaN(campaignId)) {
@@ -151,6 +153,7 @@ export class CampaignsController {
       const updated = await this.campaignsService.update(
         campaignId,
         updateCampaignDto,
+        file, // truyền file vào service
       );
       return ResponseApi.success('Cập nhật chiến dịch thành công', updated);
     } catch (err) {
@@ -160,6 +163,7 @@ export class CampaignsController {
       );
     }
   }
+
   // DELETE /campaigns/:id: Xoá một chiến dịch theo ID
   @Delete(':id')
   async deleteCampaign(@Param('id') id: string) {
