@@ -54,7 +54,7 @@ export class AdminUsersController {
         roles,
       } = body;
 
-      const profileImage = files?.profileImage?.[0]?.path || null;
+      const profileImage = files?.profileImage?.[0]?.path ?? undefined;
 
       const userDto: CreateUserDto = {
         email,
@@ -65,23 +65,36 @@ export class AdminUsersController {
         phone,
       };
 
-      const roleNames = roles
-        ? Array.isArray(roles)
-          ? roles
-          : [roles]
-        : [];
+      // Chuẩn hoá roleNames từ form-data
+      let roleNames: string[] = [];
+      if (Array.isArray(roles)) {
+        roleNames = roles;
+      } else if (typeof roles === 'string') {
+        try {
+          const parsed = JSON.parse(roles);
+          roleNames = Array.isArray(parsed) ? parsed : [roles];
+        } catch {
+          roleNames = [roles];
+        }
+      }
+
 
       const createdUser = await this.adminUsersService.createUserWithRolesAndImage(
         userDto,
         roleNames,
-        profileImage ?? undefined,
+        profileImage,
       );
 
       return ResponseApi.success('User created successfully', createdUser, HttpStatus.CREATED);
-    } catch {
-      return ResponseApi.customError(HttpStatus.INTERNAL_SERVER_ERROR, 'Failed to create user');
+    } catch (error) {
+      console.error('[CreateUserError]', error);
+      return ResponseApi.customError(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Failed to create user',
+      );
     }
   }
+
 
 
   @Put(':id')
