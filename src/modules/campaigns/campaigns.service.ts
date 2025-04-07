@@ -185,8 +185,27 @@ export class CampaignsService {
     }
   
     // Cập nhật thông tin chiến dịch
-    await this.campaignsRepository.update(id, updateDto);
-  
+    const dataToUpdate: any = { ...updateDto };
+    if (typeof updateDto.isFeatured === 'string') {
+      dataToUpdate.isFeatured = updateDto.isFeatured.toLowerCase() === 'true';
+    }
+    // Parse tags
+    if (typeof updateDto.tags === 'string') {
+      if (updateDto.tags.startsWith('[') && updateDto.tags.endsWith(']')) {
+        try {
+          dataToUpdate.tags = JSON.parse(updateDto.tags).map((tag: string) =>
+            tag.trim().replace(/^["']+|["']+$/g, ''),
+          );
+        } catch (e) {
+          dataToUpdate.tags = [];
+        }
+      } else {
+        dataToUpdate.tags = updateDto.tags
+          .split(',')
+          .map((tag) => tag.trim().replace(/^["']+|["']+$/g, ''));
+      }
+    }
+    await this.campaignsRepository.update(id, dataToUpdate);
     // Nếu có file ảnh mới, convert sang base64 và cập nhật ảnh
     if (file) {
       const fileBuffer = file.buffer.toString('base64');

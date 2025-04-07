@@ -119,9 +119,8 @@ export class UpdateCampaignDto {
   slug?: string;
 
   @IsOptional()
-  @IsBoolean()
-  @Type(() => Boolean)
-  isFeatured?: boolean;
+  @IsString() // vì form-data truyền lên là string
+  isFeatured?: string;
 
   @IsOptional()
   @IsDateString()
