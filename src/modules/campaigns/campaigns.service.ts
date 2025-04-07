@@ -140,30 +140,86 @@ export class CampaignsService {
   }
 
   // Cập nhật chiến dịch
-  async update(id: number, updateDto: UpdateCampaignDto): Promise<Campaign> {
+  // async update(id: number, updateDto: UpdateCampaignDto): Promise<Campaign> {
+  //   if (!updateDto || Object.keys(updateDto).length === 0) {
+  //     throw new BadRequestException('Update data is required');
+  //   }
+
+  //   const existing = await this.campaignsRepository.findOne({ where: { id } });
+  //   if (!existing) {
+  //     throw new NotFoundException(`Campaign with ID ${id} not found`);
+  //   }
+
+  //   await this.campaignsRepository.update(id, updateDto);
+
+  //   const updated = await this.campaignsRepository.findOne({
+  //     where: { id },
+  //     relations: ['media'],
+  //   });
+
+  //   if (!updated) {
+  //     throw new NotFoundException(
+  //       `Campaign with ID ${id} not found after update`,
+  //     );
+  //   }
+
+  //   return updated;
+  // }
+  async update(
+    id: number,
+    updateDto: UpdateCampaignDto,
+    file?: Express.Multer.File,
+  ): Promise<Campaign> {
     if (!updateDto || Object.keys(updateDto).length === 0) {
       throw new BadRequestException('Update data is required');
     }
 
-    const existing = await this.campaignsRepository.findOne({ where: { id } });
+    const existing = await this.campaignsRepository.findOne({
+      where: { id },
+      relations: ['media'],
+    });
+
     if (!existing) {
       throw new NotFoundException(`Campaign with ID ${id} not found`);
     }
 
+    // Cập nhật thông tin chiến dịch
     await this.campaignsRepository.update(id, updateDto);
+
+    // Nếu có file ảnh mới, convert sang base64 và cập nhật ảnh
+    if (file) {
+      const fileBuffer = file.buffer.toString('base64');
+      const base64Image = `data:${file.mimetype};base64,${fileBuffer}`;
+      const matches = base64Image.match(
+        /^data:(image|video|audio|application)\/([a-zA-Z0-9]+);base64/,
+      );
+      const fileExtension = matches ? matches[2] : 'png';
+
+      const media = existing.media?.[0]; // giả định 1 ảnh chính
+
+      if (media) {
+        await this.campaignMediaRepository.update(media.id, {
+          base64Image,
+          url: `uploads/temp-update.${fileExtension}`,
+          updatedAt: new Date(),
+        });
+      } else {
+        await this.campaignMediaRepository.save({
+          campaign: existing,
+          base64Image,
+          mediaType: 'image',
+          url: `uploads/temp-update.${fileExtension}`,
+          isPrimary: true,
+        });
+      }
+    }
 
     const updated = await this.campaignsRepository.findOne({
       where: { id },
       relations: ['media'],
     });
 
-    if (!updated) {
-      throw new NotFoundException(
-        `Campaign with ID ${id} not found after update`,
-      );
-    }
-
-    return updated;
+    return updated!;
   }
 
   // Xóa chiến dịch

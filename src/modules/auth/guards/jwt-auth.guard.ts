@@ -19,6 +19,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       '/auth/register',
       '/auth/verify',
       '/auth/resend-verification',
+      '/campaigns',
     ];
 
     // Check if the route is public

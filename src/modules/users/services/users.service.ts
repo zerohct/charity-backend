@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
 import { CreateUserDto, UpdateUserDto } from '../dto/users.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -63,12 +64,14 @@ export class UsersService {
   // Tạo người dùng mới
   async create(createUserDto: CreateUserDto): Promise<User> {
     try {
-      // Kiểm tra email trùng lặp
       const existingUser = await this.usersRepository.findOne({
         where: { email: createUserDto.email },
       });
       if (existingUser) {
         throw new UnauthorizedException('Email đã được sử dụng');
+      }
+      if (createUserDto.password) {
+        createUserDto.password = await bcrypt.hash(createUserDto.password, 10);
       }
 
       const newUser = this.usersRepository.create(createUserDto);
@@ -84,6 +87,12 @@ export class UsersService {
   // Cập nhật người dùng
   async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
     const user = await this.findById(id);
+
+    // Hash password mới nếu có
+    if (updateUserDto.password) {
+      updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
+    }
+
     Object.assign(user, updateUserDto);
     return this.usersRepository.save(user);
   }

@@ -115,4 +115,22 @@ export class AdminUsersController {
       );
     }
   }
+
+  @Get(':id')
+  async getUserById(
+    @Param('id') userId: number,
+  ): Promise<ICustomResponse<User>> {
+    try {
+      const user = await this.adminUsersService.getUserById(userId);
+      return ResponseApi.success('User retrieved successfully', user);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        return ResponseApi.error404(error.message);
+      }
+      return ResponseApi.customError(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Failed to retrieve user',
+      );
+    }
+  }
 }
