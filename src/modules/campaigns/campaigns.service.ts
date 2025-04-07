@@ -8,6 +8,7 @@ import { UpdateCampaignDto } from './dto/campaigns.dto';
 import { NotFoundException } from '@nestjs/common';
 import { CampaignMedia } from './entities/campaign-media.entity';
 
+
 import { BadRequestException } from '@nestjs/common';
 import { DeepPartial } from 'typeorm';
 import { Logger } from '@nestjs/common';
@@ -92,8 +93,8 @@ export class CampaignsService {
       slug: body.slug || null,
       isFeatured:
         typeof body.isFeatured === 'string'
-          ? body.isFeatured === 'true'
-          : !!body.isFeatured,
+          ? body.isFeatured.toLowerCase() === 'true'
+          : false,
       startDate: body.startDate ? new Date(body.startDate) : new Date(),
       deadline: body.deadline ? new Date(body.deadline) : null,
     } as DeepPartial<Campaign>);
