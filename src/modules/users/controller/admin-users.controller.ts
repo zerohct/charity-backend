@@ -15,6 +15,9 @@ import { ICustomResponse, ResponseApi } from 'src/common/response/response-api';
 import { User } from '../entities/user.entity';
 import { CreateUserDto } from '../dto/users.dto';
 import { NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { UseInterceptors } from '@nestjs/common/decorators/core/use-interceptors.decorator';
+import { UploadedFiles } from '@nestjs/common/decorators/http/route-params.decorator';
 
 @Controller('admin/users')
 @RequireRoles('admin')
@@ -35,64 +38,96 @@ export class AdminUsersController {
   }
 
   @Post()
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'profileImage', maxCount: 1 }]))
   async createUser(
-    @Body() createDto: { user: CreateUserDto; roles: string[] },
+    @Body() body: any,
+    @UploadedFiles() files: { profileImage?: Express.Multer.File[] },
   ): Promise<ICustomResponse<User>> {
     try {
-      const user = await this.adminUsersService.createUserWithRoles(
-        createDto.user,
-        createDto.roles,
+      const {
+        email,
+        password,
+        firstName,
+        lastName,
+        username,
+        phone,
+        roles,
+      } = body;
+
+      const profileImage = files?.profileImage?.[0]?.path || null;
+
+      const userDto: CreateUserDto = {
+        email,
+        password,
+        firstName,
+        lastName,
+        username,
+        phone,
+      };
+
+      const roleNames = roles
+        ? Array.isArray(roles)
+          ? roles
+          : [roles]
+        : [];
+
+      const createdUser = await this.adminUsersService.createUserWithRolesAndImage(
+        userDto,
+        roleNames,
+        profileImage ?? undefined,
       );
-      return ResponseApi.success(
-        'User created successfully',
-        user,
-        HttpStatus.CREATED,
-      );
+
+      return ResponseApi.success('User created successfully', createdUser, HttpStatus.CREATED);
     } catch {
-      return ResponseApi.customError(
-        HttpStatus.INTERNAL_SERVER_ERROR,
-        'Failed to create user',
-      );
+      return ResponseApi.customError(HttpStatus.INTERNAL_SERVER_ERROR, 'Failed to create user');
     }
   }
 
+
   @Put(':id')
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'profileImage', maxCount: 1 }]))
   async updateUser(
     @Param('id') userId: number,
-    @Body() updateDto: Partial<CreateUserDto>,
+    @Body() body: any,
+    @UploadedFiles() files: { profileImage?: Express.Multer.File[] },
   ): Promise<ICustomResponse<User>> {
     try {
+      const profileImage = files?.profileImage?.[0]?.path || null;
+      const updateDto: any = {
+        ...body,
+        avatar: profileImage ?? undefined,
+      };
+
       const user = await this.adminUsersService.updateUser(userId, updateDto);
       return ResponseApi.success('User updated successfully', user);
     } catch (error) {
-      if (error instanceof NotFoundException) {
-        return ResponseApi.error404(error.message);
-      }
-      return ResponseApi.customError(
-        HttpStatus.INTERNAL_SERVER_ERROR,
-        'Failed to update user',
-      );
+      return error instanceof NotFoundException
+        ? ResponseApi.error404(error.message)
+        : ResponseApi.customError(HttpStatus.INTERNAL_SERVER_ERROR, 'Failed to update user');
     }
   }
 
   @Put(':id/roles')
-  async updateUserRoles(
-    @Param('id') userId: number,
-    @Body() { roles }: { roles: string[] },
-  ): Promise<ICustomResponse<User>> {
-    try {
-      const user = await this.adminUsersService.updateUserRoles(userId, roles);
-      return ResponseApi.success('User roles updated successfully', user);
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        return ResponseApi.error404(error.message);
-      }
-      return ResponseApi.customError(
-        HttpStatus.INTERNAL_SERVER_ERROR,
-        'Failed to update user roles',
-      );
-    }
+@UseInterceptors(FileFieldsInterceptor([]))
+async updateUserRoles(
+  @Param('id') userId: number,
+  @Body() body: any,
+): Promise<ICustomResponse<User>> {
+  try {
+    const roles = body.roles
+      ? Array.isArray(body.roles)
+        ? body.roles
+        : [body.roles]
+      : [];
+
+    const user = await this.adminUsersService.updateUserRoles(userId, roles);
+    return ResponseApi.success('User roles updated successfully', user);
+  } catch (error) {
+    return error instanceof NotFoundException
+      ? ResponseApi.error404(error.message)
+      : ResponseApi.customError(HttpStatus.INTERNAL_SERVER_ERROR, 'Failed to update user roles');
   }
+}
 
   @Delete(':id')
   async deleteUser(

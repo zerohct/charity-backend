@@ -7,6 +7,7 @@ import { UsersService } from './users.service';
 import { RolesService } from './role.service';
 import { User } from '../entities/user.entity';
 import { CreateUserDto } from '../dto/users.dto';
+import { UpdateUserDto } from '../dto/users.dto';
 
 @Injectable()
 export class AdminUsersService {
@@ -15,32 +16,41 @@ export class AdminUsersService {
     private readonly rolesService: RolesService,
   ) {}
 
-  async createUserWithRoles(
+  async createUserWithRolesAndImage(
     createUserDto: CreateUserDto,
     roleNames: string[],
+    profileImage?: string,
   ): Promise<User> {
     const newUser = await this.usersService.create({
       ...createUserDto,
-      password:
-        createUserDto.password || Math.random().toString(36).substring(2, 15),
+      password: createUserDto.password || Math.random().toString(36).slice(2),
       emailVerified: true,
+      avatar: profileImage,
     });
-
+  
     if (roleNames && roleNames.length > 0) {
       await this.rolesService.setUserRoles(newUser.id, roleNames);
     } else {
       await this.rolesService.assignRoleToUser(newUser.id, 'user');
     }
-
+  
     return this.usersService.findById(newUser.id);
   }
-
+  
   async updateUser(
     userId: number,
     updateUserDto: Partial<CreateUserDto>,
   ): Promise<User> {
-    return this.usersService.update(userId, updateUserDto);
+    // Chuyển avatar null => undefined
+    const cleanDto: Partial<UpdateUserDto> = {
+      ...updateUserDto,
+      avatar:
+        updateUserDto.avatar === null ? undefined : updateUserDto.avatar,
+    };
+  
+    return this.usersService.update(userId, cleanDto);
   }
+  
 
   async updateUserRoles(userId: number, roleNames: string[]): Promise<User> {
     return this.rolesService.setUserRoles(userId, roleNames);

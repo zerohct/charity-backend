@@ -6,6 +6,7 @@ import rateLimit from 'express-rate-limit';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.useGlobalPipes(new ValidationPipe({ transform: true })); // Enable validation globally 
 
   // Enable CORS with strict options
   app.enableCors({
