@@ -74,15 +74,14 @@ export class AuthService {
         throw new UnauthorizedException('Email đã được sử dụng');
       }
 
-      const hashedPassword = await bcrypt.hash(registerDto.password, 10);
       const newUserData = {
         ...registerDto,
-        password: hashedPassword,
-        emailVerified: true, // Tạm thời đặt true để bỏ qua gửi email
+        password: registerDto.password,
+        emailVerified: true,
         verificationToken: this.generateVerificationToken(),
       };
-      const newUser = await this.usersService.create(newUserData);
 
+      const newUser = await this.usersService.create(newUserData);
       await this.rolesService.assignRoleToUser(newUser.id, 'user');
 
       // Tạm thời comment để kiểm tra

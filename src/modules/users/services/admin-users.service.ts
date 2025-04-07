@@ -63,4 +63,12 @@ export class AdminUsersService {
   async getAllUsersWithRoles(): Promise<User[]> {
     return this.usersService.findAll();
   }
+
+  async getUserById(id: number): Promise<User> {
+    const user = await this.usersService.findById(id);
+    if (!user) {
+      throw new NotFoundException(`User with ID "${id}" not found`);
+    }
+    return user;
+  }
 }
