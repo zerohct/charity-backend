@@ -6,7 +6,7 @@ import {
 import { UsersService } from './users.service';
 import { RolesService } from './role.service';
 import { User } from '../entities/user.entity';
-import { CreateUserDto } from '../dto/users.dto';
+import { CreateUserDto, UpdateUserDto } from '../dto/users.dto';
 // import { UpdateUserDto } from '../dto/users.dto';
 
 @Injectable()
@@ -37,6 +37,46 @@ export class AdminUsersService {
     }
 
     return this.usersService.findById(newUser.id);
+  }
+
+  async updateUser(
+    userId: number,
+    updateDto: Partial<UpdateUserDto>,
+  ): Promise<User> {
+    try {
+      // Kiểm tra xem user có tồn tại không
+      const existingUser = await this.usersService.findById(userId);
+      if (!existingUser) {
+        throw new NotFoundException(`User with ID "${userId}" not found`);
+      }
+
+      // Chuẩn hóa dữ liệu: loại bỏ null không mong muốn, giữ nguyên các trường không gửi
+      const cleanDto: Partial<UpdateUserDto> = {
+        ...updateDto,
+        avatar: updateDto.avatar === null ? undefined : updateDto.avatar,
+      };
+
+      // Nếu email được gửi và khác với email hiện tại, kiểm tra xem email đã tồn tại chưa
+      if (cleanDto.email && cleanDto.email !== existingUser.email) {
+        const emailExists = await this.usersService.findByEmail(cleanDto.email);
+        if (emailExists && emailExists.id !== userId) {
+          throw new UnauthorizedException('Email đã được sử dụng');
+        }
+      }
+
+      // Cập nhật thông tin user
+      const updatedUser = await this.usersService.update(userId, cleanDto);
+
+      return updatedUser;
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof UnauthorizedException
+      ) {
+        throw error;
+      }
+      throw new Error(`Failed to update user: ${error.message}`);
+    }
   }
 
   // async updateUser(

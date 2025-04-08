@@ -36,6 +36,24 @@ export class RolesController {
     }
   }
 
+  @Get(':id')
+  async getRoleById(
+    @Param('id') roleId: number,
+  ): Promise<ICustomResponse<Role>> {
+    try {
+      const role = await this.rolesService.findById(roleId);
+      return ResponseApi.success('Role retrieved successfully', role);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        return ResponseApi.error404(error.message);
+      }
+      return ResponseApi.customError(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Failed to fetch role',
+      );
+    }
+  }
+
   @Post()
   @UseInterceptors(FileFieldsInterceptor([])) // Thêm interceptor để xử lý form-data
   async createRole(
