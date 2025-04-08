@@ -8,7 +8,6 @@ import { UpdateCampaignDto } from './dto/campaigns.dto';
 import { NotFoundException } from '@nestjs/common';
 import { CampaignMedia } from './entities/campaign-media.entity';
 
-
 import { BadRequestException } from '@nestjs/common';
 import { DeepPartial } from 'typeorm';
 import { Logger } from '@nestjs/common';
@@ -174,16 +173,16 @@ export class CampaignsService {
     if (!updateDto || Object.keys(updateDto).length === 0) {
       throw new BadRequestException('Update data is required');
     }
-  
+
     const existing = await this.campaignsRepository.findOne({
       where: { id },
       relations: ['media'],
     });
-  
+
     if (!existing) {
       throw new NotFoundException(`Campaign with ID ${id} not found`);
     }
-  
+
     // Cập nhật thông tin chiến dịch
     const dataToUpdate: any = { ...updateDto };
     if (typeof updateDto.isFeatured === 'string') {
@@ -214,9 +213,9 @@ export class CampaignsService {
         /^data:(image|video|audio|application)\/([a-zA-Z0-9]+);base64/,
       );
       const fileExtension = matches ? matches[2] : 'png';
-  
+
       const media = existing.media?.[0]; // giả định 1 ảnh chính
-  
+
       if (media) {
         await this.campaignMediaRepository.update(media.id, {
           base64Image,
@@ -233,15 +232,14 @@ export class CampaignsService {
         });
       }
     }
-  
+
     const updated = await this.campaignsRepository.findOne({
       where: { id },
       relations: ['media'],
     });
-  
+
     return updated!;
   }
-    
 
   // Xóa chiến dịch
   async delete(id: number): Promise<void> {

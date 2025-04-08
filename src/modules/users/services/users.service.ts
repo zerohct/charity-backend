@@ -48,11 +48,10 @@ export class UsersService {
     return user || null;
   }
   // Tìm người dùng theo ID
-  async findById(id: number, relations: string[] = []): Promise<User> {
+  async findById(id: number, relations: string[] = ['roles']): Promise<User> {
     const user = await this.usersRepository.findOne({
       where: { id },
-      //relations: relations,
-      relations: ['roles'],
+      relations: relations,
     });
 
     if (!user) {

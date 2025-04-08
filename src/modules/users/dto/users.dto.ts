@@ -12,7 +12,7 @@ import {
 export class CreateUserDto {
   @IsOptional()
   @IsString()
-  avatar?: string | null; 
+  avatar?: string | null;
 
   @IsEmail()
   email: string;
@@ -43,8 +43,6 @@ export class CreateUserDto {
 }
 
 export class UpdateUserDto {
- 
-
   @IsOptional()
   @IsEmail()
   email?: string;
@@ -71,7 +69,7 @@ export class UpdateUserDto {
 
   @IsOptional()
   @IsString()
-  avatar?: string | null; 
+  avatar?: string | null;
 
   @IsOptional()
   @IsBoolean()

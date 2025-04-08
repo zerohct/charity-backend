@@ -7,7 +7,7 @@ import { UsersService } from './users.service';
 import { RolesService } from './role.service';
 import { User } from '../entities/user.entity';
 import { CreateUserDto } from '../dto/users.dto';
-import { UpdateUserDto } from '../dto/users.dto';
+// import { UpdateUserDto } from '../dto/users.dto';
 
 @Injectable()
 export class AdminUsersService {
@@ -27,33 +27,45 @@ export class AdminUsersService {
       emailVerified: true,
       avatar: profileImage,
     });
-  
-    if (roleNames && roleNames.length > 0) {
-      await this.rolesService.setUserRoles(newUser.id, roleNames);
+
+    const normalizedRoleNames = roleNames.map((role) => role.toLowerCase());
+
+    if (normalizedRoleNames && normalizedRoleNames.length > 0) {
+      await this.rolesService.setUserRoles(newUser.id, normalizedRoleNames);
     } else {
       await this.rolesService.assignRoleToUser(newUser.id, 'user');
     }
-  
+
     return this.usersService.findById(newUser.id);
   }
-  
-  async updateUser(
-    userId: number,
-    updateUserDto: Partial<CreateUserDto>,
-  ): Promise<User> {
-    // Chuyển avatar null => undefined
-    const cleanDto: Partial<UpdateUserDto> = {
-      ...updateUserDto,
-      avatar:
-        updateUserDto.avatar === null ? undefined : updateUserDto.avatar,
-    };
-  
-    return this.usersService.update(userId, cleanDto);
-  }
-  
+
+  // async updateUser(
+  //   userId: number,
+  //   updateUserDto: Partial<UpdateUserDto>,
+  //   roleNames?: string[], // Có thể truyền vào vai trò mới nếu cần
+  // ): Promise<User> {
+  //   // Chuyển avatar null => undefined
+  //   const cleanDto: Partial<UpdateUserDto> = {
+  //     ...updateUserDto,
+  //     avatar: updateUserDto.avatar === null ? undefined : updateUserDto.avatar,
+  //   };
+
+  //   // Cập nhật thông tin người dùng
+  //   const updatedUser = await this.usersService.update(userId, cleanDto);
+
+  //   // Nếu có yêu cầu cập nhật vai trò, thực hiện việc cập nhật
+  //   if (roleNames && roleNames.length > 0) {
+  //     const normalizedRoleNames = roleNames.map((role) => role.toLowerCase());
+  //     await this.rolesService.setUserRoles(updatedUser.id, normalizedRoleNames);
+  //   }
+
+  //   // Trả về người dùng sau khi cập nhật
+  //   return this.usersService.findById(updatedUser.id);
+  // }
 
   async updateUserRoles(userId: number, roleNames: string[]): Promise<User> {
-    return this.rolesService.setUserRoles(userId, roleNames);
+    const normalizedRoleNames = roleNames.map((role) => role.toLowerCase());
+    return this.rolesService.setUserRoles(userId, normalizedRoleNames);
   }
 
   async deleteUser(userId: number, requestingUser: User): Promise<boolean> {

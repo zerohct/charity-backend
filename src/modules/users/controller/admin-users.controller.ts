@@ -38,21 +38,16 @@ export class AdminUsersController {
   }
 
   @Post()
-  @UseInterceptors(FileFieldsInterceptor([{ name: 'profileImage', maxCount: 1 }]))
+  @UseInterceptors(
+    FileFieldsInterceptor([{ name: 'profileImage', maxCount: 1 }]),
+  )
   async createUser(
     @Body() body: any,
     @UploadedFiles() files: { profileImage?: Express.Multer.File[] },
   ): Promise<ICustomResponse<User>> {
     try {
-      const {
-        email,
-        password,
-        firstName,
-        lastName,
-        username,
-        phone,
-        roles,
-      } = body;
+      const { email, password, firstName, lastName, username, phone, roles } =
+        body;
 
       const profileImage = files?.profileImage?.[0]?.path ?? undefined;
 
@@ -78,14 +73,18 @@ export class AdminUsersController {
         }
       }
 
+      const createdUser =
+        await this.adminUsersService.createUserWithRolesAndImage(
+          userDto,
+          roleNames,
+          profileImage,
+        );
 
-      const createdUser = await this.adminUsersService.createUserWithRolesAndImage(
-        userDto,
-        roleNames,
-        profileImage,
+      return ResponseApi.success(
+        'User created successfully',
+        createdUser,
+        HttpStatus.CREATED,
       );
-
-      return ResponseApi.success('User created successfully', createdUser, HttpStatus.CREATED);
     } catch (error) {
       console.error('[CreateUserError]', error);
       return ResponseApi.customError(
@@ -95,52 +94,58 @@ export class AdminUsersController {
     }
   }
 
+  // @Put(':id')
+  // @UseInterceptors(
+  //   FileFieldsInterceptor([{ name: 'profileImage', maxCount: 1 }]),
+  // )
+  // async updateUser(
+  //   @Param('id') userId: number,
+  //   @Body() body: any,
+  //   @UploadedFiles() files: { profileImage?: Express.Multer.File[] },
+  // ): Promise<ICustomResponse<User>> {
+  //   try {
+  //     const profileImage = files?.profileImage?.[0]?.path || null;
+  //     const updateDto: any = {
+  //       ...body,
+  //       avatar: profileImage ?? undefined,
+  //     };
 
+  //     const user = await this.adminUsersService.updateUser(userId, updateDto);
+  //     return ResponseApi.success('User updated successfully', user);
+  //   } catch (error) {
+  //     return error instanceof NotFoundException
+  //       ? ResponseApi.error404(error.message)
+  //       : ResponseApi.customError(
+  //           HttpStatus.INTERNAL_SERVER_ERROR,
+  //           'Failed to update user',
+  //         );
+  //   }
+  // }
 
-  @Put(':id')
-  @UseInterceptors(FileFieldsInterceptor([{ name: 'profileImage', maxCount: 1 }]))
-  async updateUser(
+  @Put(':id/roles')
+  @UseInterceptors(FileFieldsInterceptor([]))
+  async updateUserRoles(
     @Param('id') userId: number,
     @Body() body: any,
-    @UploadedFiles() files: { profileImage?: Express.Multer.File[] },
   ): Promise<ICustomResponse<User>> {
     try {
-      const profileImage = files?.profileImage?.[0]?.path || null;
-      const updateDto: any = {
-        ...body,
-        avatar: profileImage ?? undefined,
-      };
+      const roles = body.roles
+        ? Array.isArray(body.roles)
+          ? body.roles
+          : [body.roles]
+        : [];
 
-      const user = await this.adminUsersService.updateUser(userId, updateDto);
-      return ResponseApi.success('User updated successfully', user);
+      const user = await this.adminUsersService.updateUserRoles(userId, roles);
+      return ResponseApi.success('User roles updated successfully', user);
     } catch (error) {
       return error instanceof NotFoundException
         ? ResponseApi.error404(error.message)
-        : ResponseApi.customError(HttpStatus.INTERNAL_SERVER_ERROR, 'Failed to update user');
+        : ResponseApi.customError(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            'Failed to update user roles',
+          );
     }
   }
-
-  @Put(':id/roles')
-@UseInterceptors(FileFieldsInterceptor([]))
-async updateUserRoles(
-  @Param('id') userId: number,
-  @Body() body: any,
-): Promise<ICustomResponse<User>> {
-  try {
-    const roles = body.roles
-      ? Array.isArray(body.roles)
-        ? body.roles
-        : [body.roles]
-      : [];
-
-    const user = await this.adminUsersService.updateUserRoles(userId, roles);
-    return ResponseApi.success('User roles updated successfully', user);
-  } catch (error) {
-    return error instanceof NotFoundException
-      ? ResponseApi.error404(error.message)
-      : ResponseApi.customError(HttpStatus.INTERNAL_SERVER_ERROR, 'Failed to update user roles');
-  }
-}
 
   @Delete(':id')
   async deleteUser(
