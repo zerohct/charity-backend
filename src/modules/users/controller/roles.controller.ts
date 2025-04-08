@@ -19,7 +19,7 @@ import { User } from '../entities/user.entity';
 import { NotFoundException } from '@nestjs/common';
 
 @Controller('admin/roles')
-@RequireRoles('admin') // Giữ nguyên kiểm tra role admin cho toàn bộ controller
+@RequireRoles('admin') 
 export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
 
@@ -37,9 +37,9 @@ export class RolesController {
   }
 
   @Post()
-  @UseInterceptors(FileFieldsInterceptor([])) // Thêm interceptor để xử lý form-data
+  @UseInterceptors(FileFieldsInterceptor([])) 
   async createRole(
-    @Body() body: any, // Sử dụng any để nhận FormData
+    @Body() body: any, 
   ): Promise<ICustomResponse<Role>> {
     try {
       const name = body.name;

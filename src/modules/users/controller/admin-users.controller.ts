@@ -60,7 +60,7 @@ export class AdminUsersController {
         phone,
       };
 
-      // Chuẩn hoá roleNames từ form-data
+      
       let roleNames: string[] = [];
       if (Array.isArray(roles)) {
         roleNames = roles;
@@ -122,7 +122,7 @@ export class AdminUsersController {
   //   }
   // }
 
-  @Put(':id/roles')
+  @Put(':id')
   @UseInterceptors(FileFieldsInterceptor([]))
   async updateUserRoles(
     @Param('id') userId: number,

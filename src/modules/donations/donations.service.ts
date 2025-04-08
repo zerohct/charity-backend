@@ -46,7 +46,7 @@ export class DonationsService {
     const orderId = Date.now().toString();
     const ipAddr = '127.0.0.1';
 
-    const amount = (dto.amount * 100).toString(); // cần convert sang string
+    const amount = (dto.amount * 100).toString(); 
 
     // Thêm extraData nếu muốn gửi campaignId, donorId
     const extraData = Buffer.from(
@@ -66,11 +66,11 @@ export class DonationsService {
       vnp_Locale: 'vn',
       vnp_CurrCode: 'VND',
       vnp_TxnRef: orderId,
-      vnp_OrderInfo: `Thanh toan campaign ${dto.campaignId}`, // ✅ KHÔNG dấu
+      vnp_OrderInfo: `Thanh toan campaign ${dto.campaignId}`, 
       vnp_OrderType: 'donation',
       vnp_Amount: amount,
       vnp_ReturnUrl: returnUrl,
-      vnp_IpAddr: '127.0.0.1', // ✅ Cố định IP
+      vnp_IpAddr: '127.0.0.1', 
       vnp_CreateDate: createDate,
       vnp_ExpireDate: expireDate,
       vnp_ExtraData: extraData,
@@ -97,7 +97,7 @@ export class DonationsService {
 
     // Trả về URL đầy đủ
     const redirectUrl = `${vnpUrl}?${qs.stringify(sortedParams, { encode: false })}`;
-    console.log('✅ VNPay redirect URL:', redirectUrl);
+    console.log('VNPay redirect URL:', redirectUrl);
     console.log('VNPay TMN:', tmnCode);
     console.log('VNPay SECRET:', secretKey);
     return { payUrl: redirectUrl };
@@ -130,8 +130,8 @@ export class DonationsService {
     // Giao dịch thành công
     if (query.vnp_ResponseCode === '00') {
       const amount = Number(query.vnp_Amount) / 100;
-      const campaignId = parseInt(query.vnp_OrderInfo.split(' ')[2]); // extract từ OrderInfo
-      const donorId = 1; // hoặc extract từ extraData nếu có
+      const campaignId = parseInt(query.vnp_OrderInfo.split(' ')[2]);
+      const donorId = 1; 
 
       // Tạo bản ghi donation
       const donation = this.donationsRepository.create({
@@ -194,7 +194,7 @@ export class DonationsService {
       return { RspCode: '02', Message: 'Transaction already processed' };
     }
 
-    // ✅ Tạo bản ghi donation mới
+    
     const donation = this.donationsRepository.create({
       amount,
       paymentMethod: 'vnpay',
@@ -206,7 +206,7 @@ export class DonationsService {
 
     await this.donationsRepository.save(donation);
 
-    // ✅ Cập nhật số tiền đã quyên góp của chiến dịch
+    //Cập nhật số tiền đã quyên góp của chiến dịch
     await this.campaignRepository.increment(
       { id: campaignId },
       'collectedAmount',
@@ -247,7 +247,7 @@ export class DonationsService {
 
   /////////////////////////////////////////////////////////////////////////
   async createMomoPayment(dto: CreateDonationDto) {
-    // ✅ Validate campaign
+    //Validate campaign
     const campaign = await this.campaignRepository.findOne({
       where: { id: dto.campaignId },
     });
@@ -255,13 +255,13 @@ export class DonationsService {
       throw new NotFoundException('Chiến dịch không tồn tại');
     }
 
-    // ✅ Validate donor
+    //Validate donor
 
     const partnerCode = process.env.MOMO_PARTNER_CODE!;
     const accessKey = process.env.MOMO_ACCESS_KEY!;
     const secretKey = process.env.MOMO_SECRET_KEY!;
     const redirectUrl = process.env.MOMO_REDIRECT_URL!;
-    const ipnUrl = process.env.MOMO_NOTIFY_URL || ''; // Có thể trống
+    const ipnUrl = process.env.MOMO_NOTIFY_URL || ''; 
 
     const orderId = Date.now().toString();
     const requestId = orderId;
@@ -276,7 +276,7 @@ export class DonationsService {
 
     const orderInfo = `Thanh toan donation ${dto.campaignId}`;
 
-    // 🔐 Chuỗi ký đúng thứ tự theo tài liệu Momo
+    //Chuỗi ký đúng thứ tự theo tài liệu Momo
     const rawSignature = [
       `accessKey=${accessKey}`,
       `amount=${amount}`,
@@ -289,7 +289,7 @@ export class DonationsService {
       `requestId=${requestId}`,
       `requestType=captureWallet`,
     ]
-      .filter(Boolean) // loại bỏ null nếu ipnUrl trống
+      .filter(Boolean)
       .join('&');
 
     const signature = crypto
@@ -309,7 +309,7 @@ export class DonationsService {
       extraData,
       requestType: 'captureWallet',
       lang: 'vi',
-      signature, // ✅ THÊM SIGNATURE Ở ĐÂY!
+      signature,
     };
 
     const response = await axios.post(
@@ -327,13 +327,13 @@ export class DonationsService {
   /// Chú ý: Momo sẽ gửi lại các thông tin như orderId, requestId, resultCode, message
   async handleMomoReturn(query: any) {
     if (query.resultCode === '0') {
-      // ✅ Giải mã extraData
+      
       const extra = JSON.parse(
         Buffer.from(query.extraData, 'base64').toString(),
       );
       const { campaignId, donorId } = extra;
 
-      // ✅ Tăng collectedAmount cho campaign
+      
       const campaign = await this.campaignRepository.findOne({
         where: { id: campaignId },
       });
@@ -343,7 +343,7 @@ export class DonationsService {
       campaign.collectedAmount += +query.amount;
       await this.campaignRepository.save(campaign);
 
-      // ✅ Lưu transaction/donation
+      
       const donation = this.donationsRepository.create({
         campaign: { id: campaignId },
         donor: { id: donorId },
@@ -359,7 +359,7 @@ export class DonationsService {
     }
   }
 
-  /// Xử lý IPN từ Momo
+  //Xử lý IPN từ Momo
   async handleMomoIpn(body: any) {
     const secretKey = process.env.MOMO_SECRET_KEY;
     if (!secretKey) {

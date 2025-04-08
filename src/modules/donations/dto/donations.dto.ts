@@ -17,7 +17,6 @@ export class CreateDonationDto {
   @IsString()
   transactionId?: string;
 
-  // Bạn cần nhận biết campaignId và donorId từ phía client
   @IsNumber()
   @Type(() => Number)
   campaignId: number;

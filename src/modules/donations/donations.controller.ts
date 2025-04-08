@@ -59,7 +59,6 @@ export class DonationsController {
   async handleMomoReturn(@Query() query: any) {
     return this.donationsService.handleMomoReturn(query);
   }
-
   @Post('momo-ipn')
   handleMomoIpn(@Body() body: any) {
     return this.donationsService.handleMomoIpn(body);

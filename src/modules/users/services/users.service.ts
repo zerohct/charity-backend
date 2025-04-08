@@ -16,22 +16,20 @@ export class UsersService {
     private readonly usersRepository: Repository<User>,
   ) {}
 
-  // Lấy tất cả người dùng
+  
   async findAll(): Promise<User[]> {
     return this.usersRepository.find({ relations: ['roles'] });
   }
 
-  // Tìm người dùng theo email
-  // Tìm người dùng theo email (for registration checks)
+  
   async findByEmail(email: string): Promise<User | null> {
     const user = await this.usersRepository.findOne({
       where: { email },
       relations: ['roles'],
     });
-    return user || null; // Trả về null nếu không tìm thấy
+    return user || null; 
   }
 
-  // Tìm người dùng theo số điện thoại
   async findByPhone(phone: string): Promise<User | null> {
     const user = await this.usersRepository.findOne({
       where: { phone },
@@ -47,7 +45,6 @@ export class UsersService {
     });
     return user || null;
   }
-  // Tìm người dùng theo ID
   async findById(id: number, relations: string[] = ['roles']): Promise<User> {
     const user = await this.usersRepository.findOne({
       where: { id },
@@ -88,7 +85,7 @@ export class UsersService {
   async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
     const user = await this.findById(id);
 
-    // Hash password mới nếu có
+    // Hash password 
     if (updateUserDto.password) {
       updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
     }
